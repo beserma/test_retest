@@ -1,6 +1,6 @@
 """
-ANÁLISIS DE CALIDAD DE SEÑAL vs ICC
-Solo Amplitude (sin conditionweights complicados)
+SIGNAL QUALITY ANALYSIS vs ICC
+Amplitude-only analysis (no condition weights)
 """
 
 import numpy as np
@@ -15,30 +15,31 @@ warnings.filterwarnings("ignore")
 from scipy import signal
 
 # =============================================================================
-# CONFIGURACIÓN
+# CONFIGURATION
 # =============================================================================
-conn_path = 'Y:\\mnt\\rimp\\PROJECTS\\TEST-RETEST\\Conectividad funcional\\conn_project01'
-preprocessing_path = os.path.join(conn_path, 'results', 'preprocessing')
-output_path = os.path.join(conn_path, 'results', 'firstlevel', 'SBC_01')
+# Standard input/output folders for this repository
+input_path = '/input'
+preprocessing_path = os.path.join(input_path, 'results', 'preprocessing')
+output_path = '/output'
 
 n_subjects = 34
 conditions = [2, 3, 4]
 
 print("="*80)
-print("ANÁLISIS: AMPLITUDE vs ICC")
+print("ANALYSIS: AMPLITUDE vs ICC")
 print("="*80)
 
 # =============================================================================
-# PASO 1: EXTRAER AMPLITUDE
+# STEP 1: EXTRACT AMPLITUDE
 # =============================================================================
 
 def extract_amplitude_from_conn(preprocessing_path, n_subjects, conditions):
-    """Extrae amplitude (SD de BOLD fluctuations) por ROI"""
+    """Extract amplitude (SD of BOLD fluctuations) per ROI"""
     
     all_metrics = []
     roi_names_ref = None
     
-    print(f"\nExtrayendo amplitude de {n_subjects} sujetos, {len(conditions)} condiciones...")
+    print(f"\nExtracting amplitude for {n_subjects} subjects, {len(conditions)} conditions...")
     
     for subj in range(1, n_subjects + 1):
         for cond in conditions:
@@ -152,15 +153,15 @@ def extract_amplitude_from_conn(preprocessing_path, n_subjects, conditions):
                 })
         
         if subj % 5 == 0:
-            print(f"  Procesados {subj}/{n_subjects} sujetos...")
+            print(f"  Processed {subj}/{n_subjects} subjects...")
     
     if len(all_metrics) == 0:
         return None, None
     
     df_all = pd.DataFrame(all_metrics)
     
-    print(f"\n✓ Amplitude extraída: {len(all_metrics)} observaciones")
-    print(f"✓ ROIs procesadas: {df_all['ROI'].nunique()}")
+    print(f"\n✓ Amplitude extracted: {len(all_metrics)} observations")
+    print(f"✓ ROIs processed: {df_all['ROI'].nunique()}")
     
     # Resumen por ROI (promedio across sujetos y sesiones)
     df_summary = df_all.groupby('ROI').agg({
@@ -172,24 +173,24 @@ def extract_amplitude_from_conn(preprocessing_path, n_subjects, conditions):
     
     return df_summary, df_all
 
-# Ejecutar extracción
+# Run extraction
 roi_summary, detailed_metrics = extract_amplitude_from_conn(
     preprocessing_path, n_subjects, conditions
 )
 
 if roi_summary is None:
-    print("\n❌ Error extrayendo amplitude")
+    print("\n❌ Error extracting amplitude")
     exit()
 
-# Guardar
+# Save
 roi_summary.to_excel(os.path.join(output_path, 'Signal_Amplitude_Summary.xlsx'), index=False)
 detailed_metrics.to_excel(os.path.join(output_path, 'Signal_Amplitude_Detailed.xlsx'), index=False)
 
-print(f"\n✓ Guardado: Signal_Amplitude_Summary.xlsx")
-print(f"✓ Guardado: Signal_Amplitude_Detailed.xlsx")
+print(f"\n✓ Saved: Signal_Amplitude_Summary.xlsx")
+print(f"✓ Saved: Signal_Amplitude_Detailed.xlsx")
 
 # =============================================================================
-# PASO 2: MERGE CON ICCs
+# STEP 2: MERGE WITH ICCs
 # =============================================================================
 
 def extract_network_region(roi_name):
@@ -217,7 +218,7 @@ roi_summary['Network'], roi_summary['Region'] = zip(
 )
 
 # Cargar ICCs
-print("\nCargando ICCs...")
+print("\nLoading ICCs...")
 icc_file = os.path.join(output_path, 'ICC_Table_Complete.xlsx')
 icc_data = pd.read_excel(icc_file)
 
@@ -228,14 +229,14 @@ merged = roi_summary.merge(
     how='inner'
 )
 
-print(f"✓ Datos mergeados: {len(merged)} ROIs")
+print(f"✓ Merged data: {len(merged)} ROIs")
 
 # =============================================================================
-# PASO 3: ANÁLISIS ESTADÍSTICO
+# STEP 3: STATISTICAL ANALYSIS
 # =============================================================================
 
 print("\n" + "="*80)
-print("ANÁLISIS: AMPLITUDE vs ICC")
+print("ANALYSIS: AMPLITUDE vs ICC")
 print("="*80)
 
 valid_data = merged[~merged['Amplitude_mean'].isna() & ~merged['ICC_All'].isna()]
@@ -247,7 +248,7 @@ print(f"\n1. CORRELACIÓN:")
 print(f"   Amplitude vs ICC: r = {r_amp:.3f}, p = {p_amp:.3f}")
 
 if abs(r_amp) < 0.40:
-    print(f"   ✓ Correlación DÉBIL → Amplitude NO explica diferencias ICC")
+    print(f"   ✓ Weak correlation → Amplitude does NOT explain ICC differences")
 else:
     print(f"   ⚠️  Correlación MODERADA/FUERTE")
 
@@ -263,10 +264,10 @@ print(f"   R² (Amplitude → ICC) = {r2:.3f} ({r2*100:.1f}% varianza)")
 print(f"   β = {model.coef_[0]:.4f}")
 
 if r2 < 0.25:
-    print(f"   ✓ Amplitude explica < 25% varianza ICC")
+    print(f"   ✓ Amplitude explains < 25% of ICC variance")
 
-# 3. ESTADÍSTICAS POR RED
-print(f"\n3. MÉTRICAS POR RED:")
+# 3. METRICS BY NETWORK
+print(f"\n3. METRICS BY NETWORK:")
 print(f"\n   {'Network':<12} | {'ICC':>6} | {'Amplitude':>10} | {'N_ROIs':>7}")
 print(f"   {'-'*45}")
 
@@ -289,8 +290,8 @@ for network in sorted(merged['Network'].unique()):
 
 df_network_stats = pd.DataFrame(network_stats)
 
-# 4. CASO CRÍTICO: VISUAL NETWORK
-print(f"\n4. CASO CRÍTICO - VISUAL NETWORK:")
+# 4. CRITICAL CASE: VISUAL NETWORK
+print(f"\n4. CRITICAL CASE - VISUAL NETWORK:")
 
 visual_data = merged[merged['Network'] == 'VN']
 other_data = merged[merged['Network'] != 'VN']
@@ -307,24 +308,24 @@ if len(visual_data) > 0:
     print(f"   • Amplitude: t = {t_amp:.2f}, p = {p_amp_test:.3f}")
     print(f"   • ICC: t = {t_icc:.2f}, p = {p_icc:.3f}")
     
-    if visual_data['ICC_All'].mean() < other_data['ICC_All'].mean():
-        print(f"\n   ✓✓ RESULTADO CLAVE:")
-        print(f"      Visual tiene bajo ICC ({visual_data['ICC_All'].mean():.3f})")
-        print(f"      pero amplitude intermedia ({visual_data['Amplitude_mean'].mean():.3f})")
-        print(f"      → Bajo ICC NO se debe a calidad de señal")
-        print(f"      → Refleja estado-dependencia neurobiológica")
+        if visual_data['ICC_All'].mean() < other_data['ICC_All'].mean():
+            print(f"\n   ✓✓ KEY RESULT:")
+            print(f"      Visual has low ICC ({visual_data['ICC_All'].mean():.3f})")
+            print(f"      but intermediate amplitude ({visual_data['Amplitude_mean'].mean():.3f})")
+            print(f"      → Low ICC is NOT due to signal quality")
+            print(f"      → Reflects state-dependent neurobiology")
 
 # Guardar resultados
 merged.to_excel(os.path.join(output_path, 'Amplitude_ICC_Merged.xlsx'), index=False)
 df_network_stats.to_excel(os.path.join(output_path, 'Amplitude_ICC_By_Network.xlsx'), index=False)
 
-print(f"\n✓ Resultados guardados")
+print(f"\n✓ Results saved")
 
 # =============================================================================
 # PASO 4: FIGURA
 # =============================================================================
 
-print("\nGenerando figura...")
+print("\nGenerating figure...")
 
 fig, ax = plt.subplots(1, 1, figsize=(9, 7))
 
@@ -382,7 +383,7 @@ plt.savefig(os.path.join(output_path, 'Figure_Amplitude_vs_ICC.png'),
 plt.savefig(os.path.join(output_path, 'Figure_Amplitude_vs_ICC.pdf'), 
            dpi=300, bbox_inches='tight')
 
-print(f"✓ Figura guardada: Figure_Amplitude_vs_ICC.png/pdf")
+print(f"✓ Figure saved: Figure_Amplitude_vs_ICC.png/pdf")
 
 # =============================================================================
 # PASO 5: TEXTO MANUSCRITO
@@ -456,25 +457,25 @@ print(manuscript_text)
 with open(os.path.join(output_path, 'Manuscript_Text_Amplitude.txt'), 'w') as f:
     f.write(manuscript_text)
 
-print(f"\n✓ Texto guardado: Manuscript_Text_Amplitude.txt")
+print(f"\n✓ Saved text: Manuscript_Text_Amplitude.txt")
 
 # =============================================================================
 # RESUMEN FINAL
 # =============================================================================
 
 print("\n" + "="*80)
-print("✓ ANÁLISIS COMPLETADO")
+print("✓ ANALYSIS COMPLETED")
 print("="*80)
 
-print("\nRESULTADOS CLAVE:")
-print(f"  • Amplitude vs ICC: r = {r_amp:.3f}, p = {p_amp:.3f} (DÉBIL ✓)")
-print(f"  • R² = {r2:.3f} ({r2*100:.1f}% varianza explicada)")
+print("\nKEY RESULTS:")
+print(f"  • Amplitude vs ICC: r = {r_amp:.3f}, p = {p_amp:.3f} (WEAK ✓)")
+print(f"  • R² = {r2:.3f} ({r2*100:.1f}% variance explained)")
 print(f"  • Visual: amplitude={visual_data['Amplitude_mean'].mean():.3f}, ICC={visual_data['ICC_All'].mean():.3f}")
 print(f"  • Salience: amplitude={merged[merged['Network']=='SN']['Amplitude_mean'].mean():.3f}, ICC={merged[merged['Network']=='SN']['ICC_All'].mean():.3f}")
-print(f"\n  → Amplitude NO explica ICC ✓")
-print(f"  → Diferencias ICC reflejan neurobiología, NO calidad técnica ✓")
+print(f"\n  → Amplitude does NOT explain ICC ✓")
+print(f"  → ICC differences reflect neurobiology, NOT technical quality ✓")
 
-print("\nARCHIVOS GENERADOS:")
+print("\nGENERATED FILES:")
 print("  • Signal_Amplitude_Summary.xlsx")
 print("  • Signal_Amplitude_Detailed.xlsx")
 print("  • Amplitude_ICC_Merged.xlsx")
@@ -482,7 +483,7 @@ print("  • Amplitude_ICC_By_Network.xlsx")
 print("  • Figure_Amplitude_vs_ICC.png/pdf")
 print("  • Manuscript_Text_Amplitude.txt")
 
-print("\nPRÓXIMOS PASOS:")
-print("  1. Revisar Figure_Amplitude_vs_ICC.png")
-print("  2. Copiar texto a manuscrito")
-print("  3. Responder al revisor: 'Amplitude no explica ICC'")
+print("\nNEXT STEPS:")
+print("  1. Review Figure_Amplitude_vs_ICC.png")
+print("  2. Copy manuscript text into paper")
+print("  3. Respond to reviewer: 'Amplitude does not explain ICC'")

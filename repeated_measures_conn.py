@@ -8,7 +8,7 @@ from statsmodels.stats.multitest import multipletests
 import pingouin as pg
 
 def load_matrices(mat_files, path):
-    """Carga las matrices de conectividad funcional"""
+    """Load functional connectivity matrices"""
     names_key = "names"
     names2_key = "names2"
     functional_connectivity = "Z"
@@ -25,7 +25,7 @@ def load_matrices(mat_files, path):
             matrix_zscore.append(np.array(functional_matrix))
             matrix.append(np.array(mat_data[functional_connectivity]))
         else:
-            raise KeyError(f"La clave '{functional_connectivity}' no se encontró en {file}.")
+            raise KeyError(f"Key '{functional_connectivity}' not found in {file}.")
         
         # Cargar nombres solo una vez
         if names is None and names_key in mat_data:
@@ -36,26 +36,26 @@ def load_matrices(mat_files, path):
     return matrix_zscore, matrix, names, names2
 
 def load_psychological_variables(excel_path):
-    """Carga las variables psicológicas desde Excel"""
+    """Load psychological variables from an Excel file"""
     try:
         # Intentar leer el archivo Excel
         df_psych = pd.read_excel(excel_path)
-        print(f"Variables psicológicas cargadas: {df_psych.columns.tolist()}")
+        print(f"Psychological variables loaded: {df_psych.columns.tolist()}")
         return df_psych
     except Exception as e:
-        print(f"Error al cargar el archivo Excel: {e}")
+        print(f"Error loading Excel file: {e}")
         return None
 
 def correlate_fc_psychology_repeated_measures(matrix_list, psych_data, names, names2, 
                                            significance_threshold=0.05, min_correlation=0.5):
     """
-    Calcula correlaciones por medidas repetidas entre conectividad funcional y variables psicológicas
-    usando pingouin.rm_corr()
+    Compute repeated-measures correlations between functional connectivity and psychological variables
+    using pingouin.rm_corr().
     """
     n_regions, _, n_subjects = matrix_list[0].shape
     n_conditions = len(matrix_list)
     
-    # Definir regiones a excluir por falta de estabilidad
+    # Define regions to exclude due to instability
     excluded_regions = [
         'networks.DefaultMode.MPFC (1,55,-3)',
         'networks.Visual.Medial (2,-79,12)',
@@ -68,14 +68,13 @@ def correlate_fc_psychology_repeated_measures(matrix_list, psych_data, names, na
         'networks.Cerebellar.Posterior (0,-79,-32)'
     ]
     
-    print(f"Regiones excluidas por falta de estabilidad: {len(excluded_regions)}")
+    print(f"Excluded regions due to instability: {len(excluded_regions)}")
     for region in excluded_regions:
         print(f"  - {region}")
     
-    # Verificar que el número de sujetos coincida
+    # Verify matching number of subjects
     if len(psych_data) != n_subjects:
-        print(f"ADVERTENCIA: Número de sujetos en conectividad ({n_subjects}) "
-              f"no coincide con variables psicológicas ({len(psych_data)})")
+        print(f"WARNING: Number of connectivity subjects ({n_subjects}) does not match psychological data ({len(psych_data)})")
         # Tomar el mínimo común
         n_subjects_common = min(len(psych_data), n_subjects)
         psych_data = psych_data.iloc[:n_subjects_common]
@@ -91,7 +90,7 @@ def correlate_fc_psychology_repeated_measures(matrix_list, psych_data, names, na
     correlation_pairs = []
     excluded_pairs_count = 0
     
-    print(f"Analizando {n_subjects} sujetos con {n_conditions} condiciones temporales...")
+    print(f"Analyzing {n_subjects} subjects with {n_conditions} timepoint conditions...")
     
     # Calcular correlaciones para cada par de regiones
     for i, j in combinations_with_replacement(range(n_regions), 2):
@@ -140,7 +139,7 @@ def correlate_fc_psychology_repeated_measures(matrix_list, psych_data, names, na
             # Remover filas con NaN
             expanded_df_clean = expanded_df.dropna()
             
-            if len(expanded_df_clean) < 30:  # Necesitamos suficientes observaciones
+            if len(expanded_df_clean) < 30:
                 continue
             
             try:
@@ -170,10 +169,10 @@ def correlate_fc_psychology_repeated_measures(matrix_list, psych_data, names, na
                 })
                 
             except Exception as e:
-                print(f"Error calculando RM correlation para {region_1_name}-{region_2_name}, {psych_var}: {e}")
+                print(f"Error computing RM correlation for {region_1_name}-{region_2_name}, {psych_var}: {e}")
                 continue
     
-    print(f"Pares de regiones excluidos por inestabilidad: {excluded_pairs_count}")
+    print(f"Region pairs excluded due to instability: {excluded_pairs_count}")
     
     # Aplicar corrección FDR a todos los p-values
     if all_correlations:
@@ -240,13 +239,13 @@ def main():
     """Función principal"""
     
     # Configuración de archivos y directorio
-    path = 'Z:\\mnt\\rimp\\PROJECTS\\TEST-RETEST\\Conectividad funcional\\conn_project01\\results\\firstlevel\\SBC_01'
+    path = '/input'
     mat_files = ["resultsROI_Condition002.mat", 
                  "resultsROI_Condition003.mat", 
                  "resultsROI_Condition004.mat"]
     
     # Ruta al archivo de variables psicológicas
-    psychology_excel_path = os.path.join(path, "Base_María_IRI_RPQ.xlsx")  # Ajustar ruta según sea necesario
+    psychology_excel_path = os.path.join(path, "Clinical_results.xlsx")  # Ajustar ruta según sea necesario
     
     print("Cargando matrices de conectividad funcional...")
     # Cargar las matrices de conectividad funcional

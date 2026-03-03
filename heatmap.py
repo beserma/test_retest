@@ -164,7 +164,7 @@ def create_clinical_network_visualizations(df, clinical_vars, fixed_pos, all_reg
 
 if __name__ == "__main__":
     # Load and prepare data
-    file_path = 'C:\\Code\\rm_correlation_matrix_formatted.xlsx'
+    file_path = '/input/rm_correlation_matrix_formatted.xlsx'
     df, clinical_vars, all_regions = prepare_data(file_path)
     
     # Create fixed layout with ALL regions
@@ -174,7 +174,7 @@ if __name__ == "__main__":
     network_fig = create_clinical_network_visualizations(df, clinical_vars, fixed_pos, all_regions)
     
     # Save in both formats
-    network_fig.savefig('C:\\Code\\clinical_networks_overview.png', 
+    network_fig.savefig('/output/clinical_networks_overview.png', 
                        dpi=300, bbox_inches='tight')
-    network_fig.savefig('C:\\Code\\clinical_networks_overview.svg', 
+    network_fig.savefig('/output/clinical_networks_overview.svg', 
                        format='svg', bbox_inches='tight')

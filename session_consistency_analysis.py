@@ -1,9 +1,3 @@
-"""
-ANÁLISIS DE CONSISTENCIA SESIÓN-ESPECÍFICA
-Responde: ¿Las correlaciones FC-aggression son consistentes entre sesiones?
-Si low-ICC es ruido → correlaciones cambiarían de dirección aleatoriamente
-Si low-ICC tiene componente trait → correlaciones en MISMA dirección
-"""
 
 import pingouin as pg
 import numpy as np
@@ -18,12 +12,12 @@ import seaborn as sns
 # =============================================================================
 # CONFIGURACIÓN
 # =============================================================================
-path = 'Y:\\mnt\\rimp\\PROJECTS\\TEST-RETEST\\Conectividad funcional\\conn_project01\\results\\firstlevel\\SBC_01'
+path = '/input'  # Directorio de entrada/salida para datos y resultados
 mat_files = ["resultsROI_Condition002.mat",  # Baseline
              "resultsROI_Condition003.mat",   # 1 Hour
              "resultsROI_Condition004.mat"]   # 1 Month
 
-psych_file = os.path.join(path, 'Base_María_IRI_RPQ.xlsx')
+psych_file = os.path.join(path, 'Clinical_results.xlsx')
 psych_data = pd.read_excel(psych_file)
 psych_vars = ['REACT_TOT', 'PROACT_TOT']
 

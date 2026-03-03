@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore")
 # =============================================================================
 # CONFIGURACIÓN
 # =============================================================================
-path = 'Y:\\mnt\\rimp\\PROJECTS\\TEST-RETEST\\Conectividad funcional\\conn_project01\\results\\firstlevel\\SBC_01'
+path = '/input/SBC_01'
 mat_files = ["resultsROI_Condition002.mat",  # Baseline
              "resultsROI_Condition003.mat",   # 1 Hour
              "resultsROI_Condition004.mat"]   # 1 Month

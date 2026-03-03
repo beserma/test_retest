@@ -15,7 +15,7 @@ import warnings
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-# Carga de matrices
+# Load matrices
 def load_matrices(mat_files, path):
     names_key = "names"
     names2_key = "names2"
@@ -33,7 +33,7 @@ def load_matrices(mat_files, path):
             matrix_zscore.append(np.array(functional_matrix))
             matrix.append(np.array(mat_data[functional_connectivity]))
         else:
-            raise KeyError(f"La clave '{functional_connectivity}' no se encontró en {file}.")
+            raise KeyError(f"Key '{functional_connectivity}' not found in {file}.")
         
         # Cargar nombres solo una vez (asumimos que son consistentes entre condiciones)
         if names is None and names_key in mat_data:
@@ -43,24 +43,25 @@ def load_matrices(mat_files, path):
     
     return matrix_zscore, matrix, names, names2
 
-# Configuración de archivos y directorio
-path = 'Z:\\mnt\\rimp\\PROJECTS\\TEST-RETEST\\Conectividad funcional\\conn_project01\\results\\firstlevel\\SBC_01'
+# Configuration: use standardized input/output folders
+input_path = '/input'
+output_path = '/output'
 mat_files = ["resultsROI_Condition002.mat",
              "resultsROI_Condition003.mat",
             "resultsROI_Condition004.mat"]
 
-# Cargar las matrices de conectividad funcional y nombres
-matrix_zscore, matrix_raw, names, names2 = load_matrices(mat_files, path)
+# Load matrices from input folder
+matrix_zscore, matrix_raw, names, names2 = load_matrices(mat_files, input_path)
 
-# Cargar datos de edad desde el archivo Excel
-age_file = os.path.join(path, 'Base_María_IRI_RPQ.xlsx')
+# Load age data from input folder
+age_file = os.path.join(input_path, 'Clinical_results.xlsx')
 age_df = pd.read_excel(age_file)
-ages = age_df['Age'].values  # Array con las edades para cada sujeto
+ages = age_df['Age'].values  # Array with ages for each subject
 
-# Verificar consistencia de las dimensiones
+# Verify dimension consistency
 n_regions, _, n_subjects = matrix_zscore[0].shape
-assert len(names) == n_regions and len(names2) == n_regions, "Dimensiones de nombres y matriz no coinciden."
-assert len(ages) == n_subjects, "El número de edades no coincide con el número de sujetos."
+assert len(names) == n_regions and len(names2) == n_regions, "Names and matrix dimensions do not match."
+assert len(ages) == n_subjects, "Number of ages does not match number of subjects."
 
 # Preparar los datos para ANOVA de medidas repetidas
 data = []
@@ -78,26 +79,26 @@ for subject in range(n_subjects):
 
 df_zscore = pd.DataFrame(data)
 
-# Función para residualizar la conectividad respecto a la edad
+# Function to residualize connectivity with respect to age
 def residualize_by_age(group):
-    """Residualiza los valores de conectividad removiendo el efecto de la edad."""
-    # Crear una máscara para valores válidos (no NaN)
+    """Residualize connectivity values by removing linear age effect."""
+    # Mask valid (non-NaN) values
     valid_mask = ~group['Connectivity'].isna()
-    
-    if valid_mask.sum() < 2:  # Necesitamos al menos 2 puntos para ajustar
+
+    if valid_mask.sum() < 2:
         return group
-    
+
     X = group.loc[valid_mask, 'Age'].values.reshape(-1, 1)
     y = group.loc[valid_mask, 'Connectivity'].values
-    
-    # Ajustar modelo lineal de edad -> conectividad
+
+    # Fit linear model age -> connectivity
     model = LinearRegression()
     model.fit(X, y)
-    
-    # Calcular residuos solo para valores válidos
+
+    # Compute residuals for valid values
     y_pred = model.predict(X)
     residuals = y - y_pred
-    
+
     group = group.copy()
     group.loc[valid_mask, 'Connectivity'] = residuals
     return group
@@ -119,10 +120,10 @@ for (region_1, region_2), group in df_zscore_filtered.groupby(['Region_1', 'Regi
 
 if not df_zscore_filtered.empty:
     global_icc_no_correction = pg.intraclass_corr(data=df_zscore_filtered, targets='Subject', raters='Condition', ratings='Connectivity', nan_policy='omit')
-    print("ICC sin corrección por edad (networks):")
+    print("ICC without age correction (networks):")
     print(global_icc_no_correction)
 else:
-    print("No hay pares 'networks' en los datos sin corrección.")
+    print("No 'networks' pairs found in uncorrected data.")
 
 # Crear un DataFrame con los resultados del ICC sin corrección
 icc_results_df_no_correction = pd.DataFrame()
@@ -145,8 +146,8 @@ for (region_1, region_2), value in icc_results_no_correction.items():
     icc_results_df_no_correction = pd.concat([icc_results_df_no_correction, temp_df], ignore_index=True)
 
 icc_results_df_no_correction = icc_results_df_no_correction.replace([np.inf, -np.inf], np.nan).fillna("N/A")
-icc_results_df_no_correction.to_excel(os.path.join(path, 'icc_results_without_age_correction_networks.xlsx'), index=False)
-print("Los resultados del ICC SIN corrección (networks) se han guardado en 'icc_results_without_age_correction_networks.xlsx'")
+icc_results_df_no_correction.to_excel(os.path.join(output_path, 'icc_results_without_age_correction_networks.xlsx'), index=False)
+print("Saved ICC without age correction (networks) to 'icc_results_without_age_correction_networks.xlsx'")
 
 # =====================================================================
 # CÁLCULO DE ICC CON CORRECCIÓN POR EDAD (solo 'networks')
@@ -160,10 +161,10 @@ for (region_1, region_2), group in df_zscore_residualized_filtered.groupby(['Reg
 
 if not df_zscore_residualized_filtered.empty:
     global_icc = pg.intraclass_corr(data=df_zscore_residualized_filtered, targets='Subject', raters='Condition', ratings='Connectivity', nan_policy='omit')
-    print("\nICC con corrección por edad (networks):")
+    print("\nICC with age correction (networks):")
     print(global_icc)
 else:
-    print("No hay pares 'networks' en los datos con corrección.")
+    print("No 'networks' pairs found in corrected data.")
 
 # Crear un DataFrame con los resultados del ICC (filtrado y residualizado)
 icc_results_df1 = pd.DataFrame()
@@ -186,8 +187,8 @@ for (region_1, region_2), value in icc_results.items():
     icc_results_df1 = pd.concat([icc_results_df1, temp_df], ignore_index=True)
 
 icc_results_df1 = icc_results_df1.replace([np.inf, -np.inf], np.nan).fillna("N/A")
-icc_results_df1.to_excel(os.path.join(path, 'icc_results_with_age_correction_networks.xlsx'), index=False)
-print("Los resultados del ICC CON corrección (networks) se han guardado en 'icc_results_with_age_correction_networks.xlsx'")
+icc_results_df1.to_excel(os.path.join(output_path, 'icc_results_with_age_correction_networks.xlsx'), index=False)
+print("Saved ICC with age correction (networks) to 'icc_results_with_age_correction_networks.xlsx'")
 
 
 # ==========================
@@ -284,7 +285,7 @@ try:
     df_global_comp = df_global_comp.replace([np.inf, -np.inf], np.nan)
     df_global_comp = df_global_comp.fillna("N/A")
     try:
-        df_global_comp.to_excel(os.path.join(path, 'icc_global_comparison_networks.xlsx'), index=False)
+        df_global_comp.to_excel(os.path.join(output_path, 'icc_global_comparison_networks.xlsx'), index=False)
         print("Resumen global guardado en 'icc_global_comparison_networks.xlsx'")
     except Exception as e:
         print(f"Error guardando comparación global: {e}")
@@ -341,7 +342,7 @@ df_age_effect = pd.DataFrame(age_effect_rows)
 df_age_effect = df_age_effect.replace([np.inf, -np.inf], np.nan)
 df_age_effect = df_age_effect.fillna("N/A")
 try:
-    df_age_effect.to_excel(os.path.join(path, 'age_effect_networks.xlsx'), index=False)
+    df_age_effect.to_excel(os.path.join(output_path, 'age_effect_networks.xlsx'), index=False)
     print("Resultados del test de efecto de Age guardados en 'age_effect_networks.xlsx'")
 except Exception as e:
     print(f"Error guardando age effect: {e}")
@@ -384,7 +385,7 @@ for (region_1, region_2), value in icc_results_no_correction.items():
 
 icc_results_df_no_correction = icc_results_df_no_correction.replace([np.inf, -np.inf], np.nan).fillna("N/A")
 try:
-    icc_results_df_no_correction.to_excel(os.path.join(path, 'icc_results_without_age_correction.xlsx'), index=False)
+    icc_results_df_no_correction.to_excel(os.path.join(output_path, 'icc_results_without_age_correction.xlsx'), index=False)
     print("Los resultados del ICC SIN corrección se han guardado en 'icc_results_without_age_correction.xlsx'")
 except Exception as e:
     print(f"Error guardando ICC sin corrección: {e}")
@@ -429,7 +430,7 @@ for (region_1, region_2), value in icc_results.items():
 
 icc_results_df1 = icc_results_df1.replace([np.inf, -np.inf], np.nan).fillna("N/A")
 try:
-    icc_results_df1.to_excel(os.path.join(path, 'icc_results_with_age_correction.xlsx'), index=False)
+    icc_results_df1.to_excel(os.path.join(output_path, 'icc_results_with_age_correction.xlsx'), index=False)
     print("Los resultados del ICC CON corrección se han guardado en 'icc_results_with_age_correction.xlsx'")
 except Exception as e:
     print(f"Error guardando ICC con corrección: {e}")
@@ -464,5 +465,5 @@ for subject_idx, corr_matrix in enumerate(global_correlations):
         })
 
 df_corr = pd.DataFrame(corr_data)
-df_corr.to_excel(os.path.join(path, 'global_correlations.xlsx'), index=False)
+df_corr.to_excel(os.path.join(output_path, 'global_correlations.xlsx'), index=False)
 print("Las correlaciones globales se han guardado en 'global_correlations.xlsx'")

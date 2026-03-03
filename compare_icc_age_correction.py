@@ -1,7 +1,6 @@
 """
-COMPARACIÓN ICC: CON vs SIN CORRECCIÓN POR EDAD
-Para responder al Revisor 1.1
-GENERA: Tabla S3 + Figura Scatter Plot
+ICC COMPARISON: WITH vs WITHOUT AGE CORRECTION
+Generates: Supplementary Table S3 + Scatter plot figure
 """
 
 import pingouin as pg
@@ -19,20 +18,22 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # =============================================================================
-# CONFIGURACIÓN
+# CONFIGURATION
 # =============================================================================
-path = 'Y:\\mnt\\rimp\\PROJECTS\\TEST-RETEST\\Conectividad funcional\\conn_project01\\results\\firstlevel\\SBC_01'
+# Use repository-level input/output folders
+input_path = '/input'
+output_path = '/output'
 mat_files = ["resultsROI_Condition002.mat",  # Baseline
              "resultsROI_Condition003.mat",   # 1 Hour
              "resultsROI_Condition004.mat"]   # 1 Month
 
-# Cargar edades
-age_file = os.path.join(path, 'Base_María_IRI_RPQ.xlsx')
+# Load ages
+age_file = os.path.join(input_path, 'Clinical_results.xlsx')
 age_df = pd.read_excel(age_file)
 ages = age_df['Age'].values
 
 # =============================================================================
-# CARGAR DATOS
+# LOAD DATA
 # =============================================================================
 def load_matrices(mat_files, path):
     matrix_zscore = []
@@ -50,15 +51,15 @@ def load_matrices(mat_files, path):
     
     return matrix_zscore, names, names2
 
-print("Cargando datos...")
-matrix_zscore, names, names2 = load_matrices(mat_files, path)
+print("Loading data...")
+matrix_zscore, names, names2 = load_matrices(mat_files, input_path)
 n_regions, _, n_subjects = matrix_zscore[0].shape
 
 # =============================================================================
 # PREPARAR DATOS EN FORMATO LARGO CON EDAD
 # =============================================================================
 def prepare_data_with_age(matrix_list, names, names2, ages):
-    """Prepara datos en formato largo incluyendo edad"""
+    """Prepare long-format data including age."""
     data = []
     n_regions, _, n_subjects = matrix_list[0].shape
     
@@ -81,14 +82,14 @@ def prepare_data_with_age(matrix_list, names, names2, ages):
     
     return pd.DataFrame(data)
 
-print("Preparando datos...")
+print("Preparing data...")
 df = prepare_data_with_age(matrix_zscore, names, names2, ages)
 
 # =============================================================================
-# RESIDUALIZAR POR EDAD
+# RESIDUALIZE BY AGE
 # =============================================================================
 def residualize_by_age(group):
-    """Remueve el efecto lineal de la edad de la conectividad"""
+    """Remove linear age effect from connectivity"""
     valid = ~group['Connectivity'].isna()
     
     if valid.sum() < 2:
@@ -97,32 +98,32 @@ def residualize_by_age(group):
     X = group.loc[valid, 'Age'].values.reshape(-1, 1)
     y = group.loc[valid, 'Connectivity'].values
     
-    # Ajustar modelo lineal
+    # Fit linear model
     model = LinearRegression()
     model.fit(X, y)
     
-    # Guardar R² (varianza explicada por edad)
+    # Save R² (variance explained by age)
     r2 = model.score(X, y)
     
-    # Calcular residuales + mean (para mantener escala)
+    # Compute residuals + mean (to keep scale)
     y_pred = model.predict(X)
     residuals = y - y_pred + y.mean()
     
-    # Reemplazar conectividad con residuales
+    # Replace connectivity with residuals
     group = group.copy()
     group.loc[valid, 'Connectivity'] = residuals
-    group['R2_Age'] = r2  # Guardar R² para análisis
+    group['R2_Age'] = r2  # Save R² for later analysis
     
     return group
 
-print("Residualizando por edad...")
+print("Residualizing by age...")
 df_residualized = df.groupby(['Region_1', 'Region_2'], group_keys=False).apply(residualize_by_age)
 
 # =============================================================================
 # CALCULAR ICCs POR CONEXIÓN INDIVIDUAL
 # =============================================================================
 
-print("\nCalculando ICCs por conexión...")
+print("\nCalculating ICCs per connection...")
 
 # Listas para almacenar ICCs por conexión
 icc_data = []
@@ -213,11 +214,11 @@ for (r1, r2), group in df.groupby(['Region_1', 'Region_2']):
 df_icc_connections = pd.DataFrame(icc_data)
 
 # =============================================================================
-# ESTADÍSTICAS DESCRIPTIVAS
+# DESCRIPTIVE STATISTICS
 # =============================================================================
 
 print("\n" + "="*80)
-print("ESTADÍSTICAS DESCRIPTIVAS")
+print("DESCRIPTIVE STATISTICS")
 print("="*80)
 
 # R² por edad
@@ -226,19 +227,19 @@ r2_sd = df_icc_connections['R2_Age'].std()
 r2_min = df_icc_connections['R2_Age'].min()
 r2_max = df_icc_connections['R2_Age'].max()
 
-print(f"\nR² (Varianza explicada por edad):")
-print(f"  Media: {r2_mean:.3f} ({r2_mean*100:.1f}%)")
+print(f"\nR² (Variance explained by age):")
+print(f"  Mean: {r2_mean:.3f} ({r2_mean*100:.1f}%)")
 print(f"  SD: {r2_sd:.3f} ({r2_sd*100:.1f}%)")
-print(f"  Rango: {r2_min:.3f} - {r2_max:.3f} ({r2_min*100:.1f}% - {r2_max*100:.1f}%)")
+print(f"  Range: {r2_min:.3f} - {r2_max:.3f} ({r2_min*100:.1f}% - {r2_max*100:.1f}%)")
 
 # Distribución de R²
 pct_below_5 = (df_icc_connections['R2_Age'] < 0.05).sum() / len(df_icc_connections) * 100
 pct_above_10 = (df_icc_connections['R2_Age'] > 0.10).sum() / len(df_icc_connections) * 100
 n_above_10 = (df_icc_connections['R2_Age'] > 0.10).sum()
 
-print(f"\nDistribución:")
-print(f"  R² < 5%: {pct_below_5:.1f}% de conexiones")
-print(f"  R² > 10%: {pct_above_10:.1f}% ({n_above_10} conexiones)")
+print(f"\nDistribution:")
+print(f"  R² < 5%: {pct_below_5:.1f}% of connections")
+print(f"  R² > 10%: {pct_above_10:.1f}% ({n_above_10} connections)")
 
 # ICCs
 icc_unadj_mean = df_icc_connections['ICC_Unadjusted'].mean()
@@ -267,16 +268,16 @@ ci_lower = delta_mean - 1.96 * se_delta
 ci_upper = delta_mean + 1.96 * se_delta
 
 print(f"\nDelta ICC (Age-adjusted - Unadjusted):")
-print(f"  Media: {delta_mean:+.4f}")
+print(f"  Mean: {delta_mean:+.4f}")
 print(f"  SD: {delta_sd:.4f}")
 print(f"  95% CI: [{ci_lower:+.4f}, {ci_upper:+.4f}]")
-print(f"  Rango: {delta_min:+.4f} a {delta_max:+.4f}")
+print(f"  Range: {delta_min:+.4f} to {delta_max:+.4f}")
 print(f"  Cohen's d: {cohens_d:.2f}")
 
 # Correlación
 r, p = stats.pearsonr(df_icc_connections['ICC_Unadjusted'], 
                        df_icc_connections['ICC_Age_Adjusted'])
-print(f"\nCorrelación ICC unadjusted vs age-adjusted:")
+print(f"\nCorrelation: ICC unadjusted vs age-adjusted:")
 print(f"  r = {r:.3f}, p < .001")
 
 # Diferencias por intervalo
@@ -287,9 +288,9 @@ delta_intervals_mean = delta_intervals.mean().mean()
 delta_intervals_min = delta_intervals.mean().min()
 delta_intervals_max = delta_intervals.mean().max()
 
-print(f"\nConsistencia entre intervalos:")
-print(f"  Media |Δ|: {delta_intervals_mean:.4f}")
-print(f"  Rango: {delta_intervals_min:.4f} - {delta_intervals_max:.4f}")
+print(f"\nConsistency across intervals:")
+print(f"  Mean |Δ|: {delta_intervals_mean:.4f}")
+print(f"  Range: {delta_intervals_min:.4f} - {delta_intervals_max:.4f}")
 
 # =============================================================================
 # IDENTIFICAR CONEXIONES CON R² > 10%
@@ -299,7 +300,7 @@ high_r2_connections = df_icc_connections[df_icc_connections['R2_Age'] > 0.10].co
 high_r2_connections = high_r2_connections.sort_values('R2_Age', ascending=False)
 
 print(f"\n" + "="*80)
-print(f"CONEXIONES CON R² > 10% (n = {len(high_r2_connections)})")
+print(f"CONNECTIONS WITH R² > 10% (n = {len(high_r2_connections)})")
 print("="*80)
 
 if len(high_r2_connections) > 0:
@@ -307,14 +308,14 @@ if len(high_r2_connections) > 0:
         print(f"\n{row['Region_1']} <-> {row['Region_2']}")
         print(f"  R² = {row['R2_Age']:.1%}")
         print(f"  ΔICC = {row['Delta_ICC']:+.3f}")
-        print(f"  ICC: {row['ICC_Unadjusted']:.3f} → {row['ICC_Age_Adjusted']:.3f}")
+        print(f"  ICC: {row['ICC_Unadjusted']:.3f} -> {row['ICC_Age_Adjusted']:.3f}")
 
 # =============================================================================
 # CREAR TABLA S3
 # =============================================================================
 
 print("\n" + "="*80)
-print("GENERANDO TABLA S3")
+print("GENERATING TABLE S3")
 print("="*80)
 
 # Parte 1: Estadísticas generales
@@ -373,10 +374,10 @@ high_r2_table.columns = ['Region 1', 'Region 2', 'R² (Age)',
                          'ICC Unadjusted', 'ICC Age-Adjusted', 'ΔICC']
 
 # Guardar Tabla S3
-with pd.ExcelWriter(os.path.join(path, 'Supplementary_Table_S3_Age_Effects.xlsx'), 
+with pd.ExcelWriter(os.path.join(output_path, 'Supplementary_Table_S3_Age_Effects.xlsx'), 
                     engine='openpyxl') as writer:
     
-    # Hoja 1: Summary statistics
+    # Sheet 1: Summary statistics
     summary_stats.to_excel(writer, sheet_name='Summary_Statistics', index=False)
     
     # Hoja 2: High R² connections
@@ -385,15 +386,14 @@ with pd.ExcelWriter(os.path.join(path, 'Supplementary_Table_S3_Age_Effects.xlsx'
     
     # Hoja 3: All connections (datos completos)
     df_icc_connections.to_excel(writer, sheet_name='All_Connections', index=False)
-
-print(f"\n✓ Tabla S3 guardada: Supplementary_Table_S3_Age_Effects.xlsx")
+print(f"\n✓ Table S3 saved: Supplementary_Table_S3_Age_Effects.xlsx")
 
 # =============================================================================
 # CREAR FIGURA: SCATTER PLOT ICC UNADJUSTED VS AGE-ADJUSTED
 # =============================================================================
 
 print("\n" + "="*80)
-print("GENERANDO FIGURA: ICC UNADJUSTED VS AGE-ADJUSTED")
+print("GENERATING FIGURE: ICC UNADJUSTED VS AGE-ADJUSTED")
 print("="*80)
 
 # Configurar estilo
@@ -452,7 +452,7 @@ ax.set_ylabel('ICC (Age-Adjusted)', fontsize=13, fontweight='bold')
 ax.set_title('Age Correction Has Negligible Effect on ICC Reliability\n', 
              fontsize=14, fontweight='bold', pad=15)
 
-# Leyenda
+# Legend
 ax.legend(loc='lower right', frameon=True, fancybox=True, shadow=True, fontsize=10)
 
 # Configurar ejes
@@ -470,25 +470,25 @@ ax.tick_params(labelsize=11)
 
 plt.tight_layout()
 
-# Guardar figura
-fig.savefig(os.path.join(path, 'Figure_S_Age_ICC_Comparison.png'), 
+# Save figure
+fig.savefig(os.path.join(output_path, 'Figure_S_Age_ICC_Comparison.png'), 
             dpi=300, bbox_inches='tight', facecolor='white')
-fig.savefig(os.path.join(path, 'Figure_S_Age_ICC_Comparison.pdf'), 
+fig.savefig(os.path.join(output_path, 'Figure_S_Age_ICC_Comparison.pdf'), 
             dpi=300, bbox_inches='tight')
 
-print(f"\n✓ Figura guardada:")
+print(f"\n✓ Figure saved:")
 print(f"  - Figure_S_Age_ICC_Comparison.png")
 print(f"  - Figure_S_Age_ICC_Comparison.pdf")
 
 plt.close()
 
 # =============================================================================
-# FIGURA ADICIONAL: DISTRIBUCIÓN DE R² Y DELTA ICC
+# ADDITIONAL FIGURE: DISTRIBUTION OF R² AND DELTA ICC
 # =============================================================================
 
 fig, axes = plt.subplots(1, 2, figsize=(14, 5), dpi=300)
 
-# Panel A: Histograma de R²
+# Panel A: Histogram of R²
 axes[0].hist(df_icc_connections['R2_Age'], bins=30, 
              color='#A23B72', alpha=0.7, edgecolor='black')
 axes[0].axvline(0.05, color='red', linestyle='--', linewidth=2, 
@@ -501,7 +501,7 @@ axes[0].set_title('A) Distribution of Age Effects', fontsize=13, fontweight='bol
 axes[0].legend(frameon=True, fontsize=10)
 axes[0].grid(True, alpha=0.3)
 
-# Panel B: Histograma de Delta ICC
+# Panel B: Histogram of Delta ICC
 axes[1].hist(df_icc_connections['Delta_ICC'], bins=30,
              color='#18978F', alpha=0.7, edgecolor='black')
 axes[1].axvline(0, color='black', linestyle='-', linewidth=2, label='No change')
@@ -514,9 +514,9 @@ axes[1].legend(frameon=True, fontsize=10)
 axes[1].grid(True, alpha=0.3)
 
 plt.tight_layout()
-fig.savefig(os.path.join(path, 'Figure_S_Age_Distribution.png'), 
+fig.savefig(os.path.join(output_path, 'Figure_S_Age_Distribution.png'), 
             dpi=300, bbox_inches='tight', facecolor='white')
-fig.savefig(os.path.join(path, 'Figure_S_Age_Distribution.pdf'), 
+fig.savefig(os.path.join(output_path, 'Figure_S_Age_Distribution.pdf'), 
             dpi=300, bbox_inches='tight')
 
 print(f"\n✓ Figura adicional guardada:")

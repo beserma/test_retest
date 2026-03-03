@@ -127,5 +127,5 @@ def create_complete_grouped_reliability_plot():
 
 # Create and save the plot
 plot = create_complete_grouped_reliability_plot()
-plot.savefig('C:\Code\\network_reliability_grouped_complete.png', dpi=300, bbox_inches='tight')
-plot.savefig('C:\Code\\network_reliability_grouped_complete.svg', format='svg', bbox_inches='tight')
+plot.savefig('/output/network_reliability_grouped_complete.png', dpi=300, bbox_inches='tight')
+plot.savefig('/output/network_reliability_grouped_complete.svg', format='svg', bbox_inches='tight')

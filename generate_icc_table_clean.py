@@ -1,10 +1,10 @@
 """
-CÓDIGO LIMPIO PARA GENERAR TABLA DE ICC
-Genera la tabla exacta que necesitas con:
-- All timepoints (3 sesiones)
-- Baseline vs 1 Hour
-- Baseline vs 1 Month  
-- 1 Hour vs 1 Month
+CLEAN CODE TO GENERATE ICC TABLE
+Generates the exact table needed with:
+ - All timepoints (3 sessions)
+ - Baseline vs 1 Hour
+ - Baseline vs 1 Month
+ - 1 Hour vs 1 Month
 """
 
 import pingouin as pg
@@ -19,18 +19,20 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # =============================================================================
-# CONFIGURACIÓN
+# CONFIGURATION
 # =============================================================================
-path = 'Y:\\mnt\\rimp\\PROJECTS\\TEST-RETEST\\Conectividad funcional\\conn_project01\\results\\firstlevel\\SBC_01'
+# Standard input/output folders
+input_path = '/input'
+output_path = '/output'
 mat_files = ["resultsROI_Condition002.mat",  # Baseline
              "resultsROI_Condition003.mat",   # 1 Hour
              "resultsROI_Condition004.mat"]   # 1 Month
 
 # =============================================================================
-# PASO 1: CARGAR DATOS
+# STEP 1: LOAD DATA
 # =============================================================================
 def load_matrices(mat_files, path):
-    """Carga las matrices de conectividad funcional"""
+    """Load functional connectivity matrices"""
     matrix_zscore = []
     matrix_raw = []
     names = None
@@ -39,26 +41,26 @@ def load_matrices(mat_files, path):
     for file in mat_files:
         mat_data = loadmat(os.path.join(path, file))
         
-        # Cargar matriz y aplicar z-score
+        # Load matrix and apply z-score
         Z_matrix = mat_data['Z']
         matrix_raw.append(np.array(Z_matrix))
         matrix_zscore.append(stats.zscore(Z_matrix, axis=2, nan_policy='omit'))
         
-        # Cargar nombres (solo una vez)
+        # Load names (only once)
         if names is None:
             names = [str(name[0]) for name in mat_data['names'].flatten()]
             names2 = [str(name[0]) for name in mat_data['names2'].flatten()]
     
     return matrix_zscore, matrix_raw, names, names2
 
-print("Cargando matrices...")
-matrix_zscore, matrix_raw, names, names2 = load_matrices(mat_files, path)
+print("Loading matrices...")
+matrix_zscore, matrix_raw, names, names2 = load_matrices(mat_files, input_path)
 n_regions, _, n_subjects = matrix_zscore[0].shape
 
-print(f"Matrices cargadas: {n_regions} regiones, {n_subjects} sujetos, {len(matrix_zscore)} condiciones")
+print(f"Matrices loaded: {n_regions} regions, {n_subjects} subjects, {len(matrix_zscore)} conditions")
 
 # =============================================================================
-# PASO 2: PREPARAR DATOS EN FORMATO LARGO
+# STEP 2: PREPARE LONG-FORM DATA
 # =============================================================================
 def prepare_long_format(matrix_list, names, names2, condition_labels=None):
     """
@@ -86,7 +88,7 @@ def prepare_long_format(matrix_list, names, names2, condition_labels=None):
     
     return pd.DataFrame(data)
 
-print("Preparando datos en formato largo...")
+print("Preparing long-form data...")
 df_all = prepare_long_format(matrix_zscore, names, names2, 
                               ['Baseline', '1Hour', '1Month'])
 
@@ -96,11 +98,11 @@ df_networks = df_all[
     (df_all['Region_2'].str.startswith('networks'))
 ].copy()
 
-print(f"Total conexiones: {len(df_all['Region_1'].unique()) * len(df_all['Region_2'].unique())}")
-print(f"Conexiones 'networks': {len(df_networks.groupby(['Region_1', 'Region_2']))}")
+print(f"Total connections (unique pairs estimate): {len(df_all['Region_1'].unique()) * len(df_all['Region_2'].unique())}")
+print(f"'networks' connections: {len(df_networks.groupby(['Region_1', 'Region_2']))}")
 
 # =============================================================================
-# PASO 3: FUNCIÓN PARA CALCULAR ICC POR REGIÓN
+# STEP 3: FUNCTION TO CALCULATE ICC BY REGION
 # =============================================================================
 def calculate_icc_by_region(df, conditions_to_include=None):
     """
@@ -188,7 +190,7 @@ def calculate_icc_by_region(df, conditions_to_include=None):
                 'Significant': icc_row['pval'] < 0.05
             })
         except Exception as e:
-            print(f"Error en {reg1}-{reg2}: {e}")
+            print(f"Error in {reg1}-{reg2}: {e}")
             continue
     
     df_connections = pd.DataFrame(connection_results)
@@ -231,15 +233,15 @@ def calculate_icc_by_region(df, conditions_to_include=None):
     return pd.DataFrame(region_results), df_connections
 
 # =============================================================================
-# PASO 4: CALCULAR ICC PARA CADA COMPARACIÓN
+# STEP 4: CALCULATE ICC FOR EACH COMPARISON
 # =============================================================================
 
 print("\n" + "="*70)
-print("CALCULANDO ICCs PARA TODAS LAS COMPARACIONES")
+print("CALCULATING ICCs FOR ALL COMPARISONS")
 print("="*70)
 
-# 4.1. ALL TIMEPOINTS (3 sesiones)
-print("\n1. Calculando All Timepoints (3 sesiones)...")
+# 4.1. ALL TIMEPOINTS (3 sessions)
+print("\n1. Calculating All Timepoints (3 sessions)...")
 regions_all, connections_all = calculate_icc_by_region(df_networks, conditions_to_include=None)
 regions_all = regions_all.rename(columns={
     'Mean_ICC': 'ICC_All',
@@ -247,7 +249,7 @@ regions_all = regions_all.rename(columns={
 })
 
 # 4.2. BASELINE vs 1 HOUR
-print("2. Calculando Baseline vs 1 Hour...")
+print("2. Calculating Baseline vs 1 Hour...")
 regions_b1h, connections_b1h = calculate_icc_by_region(df_networks, conditions_to_include=['Baseline', '1Hour'])
 regions_b1h = regions_b1h.rename(columns={
     'Mean_ICC': 'ICC_B1H',
@@ -255,7 +257,7 @@ regions_b1h = regions_b1h.rename(columns={
 })
 
 # 4.3. BASELINE vs 1 MONTH
-print("3. Calculando Baseline vs 1 Month...")
+print("3. Calculating Baseline vs 1 Month...")
 regions_b1m, connections_b1m = calculate_icc_by_region(df_networks, conditions_to_include=['Baseline', '1Month'])
 regions_b1m = regions_b1m.rename(columns={
     'Mean_ICC': 'ICC_B1M',
@@ -263,7 +265,7 @@ regions_b1m = regions_b1m.rename(columns={
 })
 
 # 4.4. 1 HOUR vs 1 MONTH
-print("4. Calculando 1 Hour vs 1 Month...")
+print("4. Calculating 1 Hour vs 1 Month...")
 regions_1h1m, connections_1h1m = calculate_icc_by_region(df_networks, conditions_to_include=['1Hour', '1Month'])
 regions_1h1m = regions_1h1m.rename(columns={
     'Mean_ICC': 'ICC_1H1M',
@@ -271,9 +273,9 @@ regions_1h1m = regions_1h1m.rename(columns={
 })
 
 # =============================================================================
-# PASO 4.5: EL ANÁLISIS DEL REVISOR 3 (AVERAGED BASELINE vs 1 MONTH)
+# STEP 4.5: REVIEWER-REQUESTED ANALYSIS (AVERAGED BASELINE vs 1 MONTH)
 # =============================================================================
-print("\n4.5. Calculando Averaged Baseline (T1+T2) vs 1 Month (T3)...")
+print("\n4.5. Calculating Averaged Baseline (T1+T2) vs 1 Month (T3)...")
 
 # 1. Crear un DataFrame con el promedio de T1 (Baseline) y T2 (1Hour)
 df_avg = df_networks[df_networks['Condition'].isin(['Baseline', '1Hour'])].copy()
@@ -297,13 +299,13 @@ regions_avg_vs_month = regions_avg_vs_month.rename(columns={
     'Pct_NonSignificant': 'PctNonSig_Avg_vs_Month'
 })
 
-print(f"ICC Promedio (Avg Baseline vs 1 Month): {connections_avg_vs_month['ICC'].mean():.3f}")
+print(f"Average ICC (Avg Baseline vs 1 Month): {connections_avg_vs_month['ICC'].mean():.3f}")
 
 # =============================================================================
-# PASO 5: COMBINAR RESULTADOS EN TABLA FINAL
+# STEP 5: COMBINE RESULTS INTO FINAL TABLE
 # =============================================================================
 
-print("\n5. Combinando resultados...")
+print("\n5. Combining results...")
 
 # Merge todos los dataframes
 table = regions_all[['Network', 'Region', 'Full_Region', 'ICC_All', 'PctNonSig_All', 'N_Connections']]
@@ -350,13 +352,13 @@ for col in ['ICC_All', 'ICC_B1H', 'ICC_B1M', 'ICC_1H1M', 'ICC_Avg_vs_Month']:
 table_final = pd.concat([table, total_row], ignore_index=True)
 
 # =============================================================================
-# PASO 6: GUARDAR RESULTADOS
+# STEP 6: SAVE RESULTS
 # =============================================================================
 
-# Guardar tabla principal
+# Save main table
 output_file = os.path.join(path, 'ICC_Table_Complete.xlsx')
 table_final.to_excel(output_file, index=False)
-print(f"\n✓ Tabla guardada en: {output_file}")
+print(f"\n✓ Table saved to: {output_file}")
 
 # Guardar conexiones individuales (para debugging)
 connections_all.to_excel(os.path.join(path, 'ICC_Connections_All.xlsx'), index=False)
@@ -366,35 +368,35 @@ connections_1h1m.to_excel(os.path.join(path, 'ICC_Connections_1H1M.xlsx'), index
 connections_avg_vs_month.to_excel(os.path.join(path, 'ICC_Connections_Avg_vs_Month.xlsx'), index=False)
 
 # =============================================================================
-# PASO 7: MOSTRAR RESUMEN
+# STEP 7: SHOW SUMMARY
 # =============================================================================
 
 print("\n" + "="*70)
-print("RESUMEN DE RESULTADOS")
+print("RESULTS SUMMARY")
 print("="*70)
 
-print(f"\nTotal de regiones analizadas: {len(table)}")
-print(f"Total de conexiones: {table['N_Connections'].sum()}")
+print(f"\nTotal regions analyzed: {len(table)}")
+print(f"Total connections: {table['N_Connections'].sum()}")
 
-print("\n--- ICCs GLOBALES ---")
+print("\n--- GLOBAL ICCs ---")
 print(f"All timepoints:      ICC = {total_row['ICC_All'].iloc[0]:.3f}")
 print(f"Baseline vs 1 Hour:  ICC = {total_row['ICC_B1H'].iloc[0]:.3f}")
 print(f"Baseline vs 1 Month: ICC = {total_row['ICC_B1M'].iloc[0]:.3f}")
 print(f"1 Hour vs 1 Month:   ICC = {total_row['ICC_1H1M'].iloc[0]:.3f}")
 
-print("\n--- % NON-SIGNIFICANT GLOBALES ---")
+print("\n--- % NON-SIGNIFICANT GLOBAL ---")
 print(f"All timepoints:      {total_row['PctNonSig_All'].iloc[0]:.0f}%")
 print(f"Baseline vs 1 Hour:  {total_row['PctNonSig_B1H'].iloc[0]:.0f}%")
 print(f"Baseline vs 1 Month: {total_row['PctNonSig_B1M'].iloc[0]:.0f}%")
 print(f"1 Hour vs 1 Month:   {total_row['PctNonSig_1H1M'].iloc[0]:.0f}%")
 
-print("\n--- TOP 5 REGIONES MÁS FIABLES (All timepoints) ---")
+print("\n--- TOP 5 MOST RELIABLE REGIONS (All timepoints) ---")
 top5 = table.nlargest(5, 'ICC_All')[['Network', 'Region', 'ICC_All', 'PctNonSig_All']]
 print(top5.to_string(index=False))
 
-print("\n--- TOP 5 REGIONES MENOS FIABLES (All timepoints) ---")
+print("\n--- TOP 5 LEAST RELIABLE REGIONS (All timepoints) ---")
 bottom5 = table.nsmallest(5, 'ICC_All')[['Network', 'Region', 'ICC_All', 'PctNonSig_All']]
 print(bottom5.to_string(index=False))
 
-print("\n✓ ANÁLISIS COMPLETADO")
+print("\n✓ ANALYSIS COMPLETED")
 print("="*70)

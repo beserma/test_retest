@@ -1,7 +1,3 @@
-"""
-DIAGNÓSTICO COMPLETO: ¿De dónde vienen 72 y 506?
-Compara conteo de conexiones entre diferentes métodos
-"""
 
 import numpy as np
 import pandas as pd
@@ -12,7 +8,7 @@ import os
 # =============================================================================
 # CONFIGURACIÓN
 # =============================================================================
-path = 'Y:\\mnt\\rimp\\PROJECTS\\TEST-RETEST\\Conectividad funcional\\conn_project01\\results\\firstlevel\\SBC_01'
+path = '/input'
 mat_files = ["resultsROI_Condition002.mat",
              "resultsROI_Condition003.mat",
              "resultsROI_Condition004.mat"]
