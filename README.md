@@ -48,17 +48,17 @@ The following data are available in this repository under `/input`:
 │
 ├── output/                             ← Generated tables, figures, results
 │
-├── calculate_signal_quality_metrics.py
-├── compare_icc_age_correction.py
-├── connectivity_stability.py
-├── correlations_conn.py
-├── generate_icc_table_clean.py
-├── heatmap.py
-├── icc_conn.py
-├── icc_figure.py
-├── repeated_measures_conn.py
-├── session_consistency_analysis.py
-├── variance_decomposition_analysis.py
+|	├── calculate_signal_quality_metrics.py
+|	├── compare_icc_age_correction.py
+|	├── connectivity_stability.py
+|	├── correlations_conn.py
+|	├── generate_icc_table_clean.py
+|	├── heatmap.py
+|	├── icc_conn.py
+|	├── icc_figure.py
+|	├── repeated_measures_conn.py
+|	├── session_consistency_analysis.py
+|	├── variance_decomposition_analysis.py
 └── README.md
 ```
 
