@@ -21,7 +21,8 @@ warnings.filterwarnings("ignore")
 # =============================================================================
 # CONFIGURACIÓN
 # =============================================================================
-path = '/input/SBC_01'
+input_path = '/input/conn_project01/results/firstlevel/SBC_01'
+output_path = '/output'
 mat_files = ["resultsROI_Condition002.mat",  # Baseline
              "resultsROI_Condition003.mat",   # 1 Hour
              "resultsROI_Condition004.mat"]   # 1 Month
@@ -51,7 +52,7 @@ print("ANÁLISIS DE VARIABILIDAD INTRA VS INTER-SUJETO")
 print("="*80)
 print("\nCargando datos...")
 
-matrices, names, names2 = load_matrices(mat_files, path)
+matrices, names, names2 = load_matrices(mat_files, input_path)
 n_regions, _, n_subjects = matrices[0].shape
 
 print(f"✓ Matrices cargadas: {n_regions} regiones, {n_subjects} sujetos, {len(matrices)} sesiones")
@@ -284,11 +285,11 @@ print("GUARDANDO RESULTADOS")
 print("="*80)
 
 # 7.1. Tabla completa
-df_merged.to_excel(os.path.join(path, 'Variance_Decomposition_Complete.xlsx'), index=False, engine='openpyxl')
+df_merged.to_excel(os.path.join(output_path, 'Variance_Decomposition_Complete.xlsx'), index=False, engine='openpyxl')
 print(f"\n✓ Tabla completa: Variance_Decomposition_Complete.xlsx")
 
 # 7.2. Tabla por red
-df_network_stats.to_excel(os.path.join(path, 'Variance_Decomposition_By_Network.xlsx'), index=False, engine='openpyxl')
+df_network_stats.to_excel(os.path.join(output_path, 'Variance_Decomposition_By_Network.xlsx'), index=False, engine='openpyxl')
 print(f"✓ Por red: Variance_Decomposition_By_Network.xlsx")
 
 # 7.3. Estadísticas resumen
@@ -302,7 +303,7 @@ summary_stats = pd.DataFrame([{
     'T_statistic': t_stat,
     'Cohens_d': cohens_d
 }])
-summary_stats.to_excel(os.path.join(path, 'Variance_Decomposition_Summary.xlsx'), index=False, engine='openpyxl')
+summary_stats.to_excel(os.path.join(output_path, 'Variance_Decomposition_Summary.xlsx'), index=False, engine='openpyxl')
 print(f"✓ Resumen: Variance_Decomposition_Summary.xlsx")
 
 # =============================================================================
@@ -349,8 +350,8 @@ ax.legend(fontsize=10, loc='lower right')
 ax.grid(True, alpha=0.3, linestyle='--')
 
 plt.tight_layout()
-plt.savefig(os.path.join(path, 'Figure_ICC_vs_BW_Ratio.png'), dpi=300, bbox_inches='tight')
-plt.savefig(os.path.join(path, 'Figure_ICC_vs_BW_Ratio.pdf'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_path, 'Figure_ICC_vs_BW_Ratio.png'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_path, 'Figure_ICC_vs_BW_Ratio.pdf'), dpi=300, bbox_inches='tight')
 print(f"✓ Figura 1: Figure_ICC_vs_BW_Ratio.png/pdf")
 
 # 8.2. Boxplot por categoría ICC
@@ -377,8 +378,8 @@ ax.set_title('B/W Ratio Increases with ICC Reliability',
 ax.grid(True, alpha=0.3, linestyle='--', axis='y')
 
 plt.tight_layout()
-plt.savefig(os.path.join(path, 'Figure_BW_by_ICC_Category.png'), dpi=300, bbox_inches='tight')
-plt.savefig(os.path.join(path, 'Figure_BW_by_ICC_Category.pdf'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_path, 'Figure_BW_by_ICC_Category.png'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_path, 'Figure_BW_by_ICC_Category.pdf'), dpi=300, bbox_inches='tight')
 print(f"✓ Figura 2: Figure_BW_by_ICC_Category.png/pdf")
 
 # =============================================================================
@@ -431,7 +432,7 @@ measurement properties.
 print(manuscript_text)
 
 # Guardar texto
-with open(os.path.join(path, 'Manuscript_Text_Variance_Decomposition.txt'), 'w', encoding='utf-8') as f:
+with open(os.path.join(output_path, 'Manuscript_Text_Variance_Decomposition.txt'), 'w', encoding='utf-8') as f:
     f.write(manuscript_text)
 print(f"\n✓ Texto guardado: Manuscript_Text_Variance_Decomposition.txt")
 

@@ -239,17 +239,19 @@ def main():
     """Función principal"""
     
     # Configuración de archivos y directorio
-    path = '/input'
+    input_path = '/input'
+    output_path = '/output'
+
     mat_files = ["resultsROI_Condition002.mat", 
                  "resultsROI_Condition003.mat", 
                  "resultsROI_Condition004.mat"]
     
     # Ruta al archivo de variables psicológicas
-    psychology_excel_path = os.path.join(path, "Clinical_results.xlsx")  # Ajustar ruta según sea necesario
+    psychology_excel_path = os.path.join(input_path, "Clinical_results.xlsx")  # Ajustar ruta según sea necesario
     
     print("Cargando matrices de conectividad funcional...")
     # Cargar las matrices de conectividad funcional
-    matrix_zscore, matrix_raw, names, names2 = load_matrices(mat_files, path)
+    matrix_zscore, matrix_raw, names, names2 = load_matrices(mat_files, input_path)
     
     print("Cargando variables psicológicas...")
     # Cargar variables psicológicas
@@ -275,8 +277,6 @@ def main():
     # Crear matriz en el formato solicitado
     correlation_matrix = create_correlation_matrix_format(significant_results, psych_columns)
     
-    # Guardar resultados
-    output_path = path
     
     # Guardar todos los resultados
     all_results.to_excel(os.path.join(output_path, "all_rm_correlations_fc_psychology.xlsx"), index=False)

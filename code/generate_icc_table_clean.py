@@ -356,17 +356,13 @@ table_final = pd.concat([table, total_row], ignore_index=True)
 # =============================================================================
 
 # Save main table
-output_file = os.path.join(path, 'ICC_Table_Complete.xlsx')
-table_final.to_excel(output_file, index=False)
-print(f"\n✓ Table saved to: {output_file}")
-
-# Guardar conexiones individuales (para debugging)
-connections_all.to_excel(os.path.join(path, 'ICC_Connections_All.xlsx'), index=False)
-connections_b1h.to_excel(os.path.join(path, 'ICC_Connections_B1H.xlsx'), index=False)
-connections_b1m.to_excel(os.path.join(path, 'ICC_Connections_B1M.xlsx'), index=False)
-connections_1h1m.to_excel(os.path.join(path, 'ICC_Connections_1H1M.xlsx'), index=False)
-connections_avg_vs_month.to_excel(os.path.join(path, 'ICC_Connections_Avg_vs_Month.xlsx'), index=False)
-
+output_file = os.path.join(output_path, 'ICC_Table_Complete.xlsx')
+...
+connections_all.to_excel(os.path.join(output_path, 'ICC_Connections_All.xlsx'), index=False)
+connections_b1h.to_excel(os.path.join(output_path, 'ICC_Connections_B1H.xlsx'), index=False)
+connections_b1m.to_excel(os.path.join(output_path, 'ICC_Connections_B1M.xlsx'), index=False)
+connections_1h1m.to_excel(os.path.join(output_path, 'ICC_Connections_1H1M.xlsx'), index=False)
+connections_avg_vs_month.to_excel(os.path.join(output_path, 'ICC_Connections_Avg_vs_Month.xlsx'), index=False)
 # =============================================================================
 # STEP 7: SHOW SUMMARY
 # =============================================================================

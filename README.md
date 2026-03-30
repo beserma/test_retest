@@ -38,11 +38,12 @@ The following data are available in this repository under `/input`:
 ├── input/                              ← Place all input data here
 │   ├── conn_project01/
 │   │   └── results/firstlevel/SBC_01/
-│   │       ├── resultsROI_Condition002.mat
-│   │       ├── resultsROI_Condition003.mat
-│   │       ├── resultsROI_Condition004.mat
+│   │       ├── resultsROI_Condition002.mat (Baseline)
+│   │       ├── resultsROI_Condition003.mat (1 Hour)
+│   │       ├── resultsROI_Condition004.mat (1 Month)
 │   │       ├── _list_conditions.txt
 │   │       └── _list_sources.mat
+│   │       └── preprocessing/
 │   └── Clinical_results.xlsx           ← Clinical & questionnaire data
 │
 ├── output/                             ← Generated tables, figures, results

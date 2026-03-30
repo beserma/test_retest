@@ -12,12 +12,13 @@ import seaborn as sns
 # =============================================================================
 # CONFIGURACIÓN
 # =============================================================================
-path = '/input'  # Directorio de entrada/salida para datos y resultados
+input_path = '/input'
+output_path = '/output'  # Directorio de entrada/salida para datos y resultados
 mat_files = ["resultsROI_Condition002.mat",  # Baseline
              "resultsROI_Condition003.mat",   # 1 Hour
              "resultsROI_Condition004.mat"]   # 1 Month
 
-psych_file = os.path.join(path, 'Clinical_results.xlsx')
+psych_file = os.path.join(input_path, 'Clinical_results.xlsx')
 psych_data = pd.read_excel(psych_file)
 psych_vars = ['REACT_TOT', 'PROACT_TOT']
 
@@ -42,7 +43,7 @@ def load_matrices(mat_files, path):
     return matrix_list, names, names2
 
 print("Cargando datos...")
-matrix_list, names, names2 = load_matrices(mat_files, path)
+matrix_list, names, names2 = load_matrices(mat_files, input_path)
 n_regions, _, n_subjects = matrix_list[0].shape
 
 # =============================================================================
@@ -414,9 +415,9 @@ if len(results_low_mean) > 0 and len(results_high_mean) > 0:
     axes[1,1].grid(True, alpha=0.3, axis='y')
 
 plt.tight_layout()
-plt.savefig(os.path.join(path, 'Figure_Session_Consistency_Analysis.png'),
+plt.savefig(os.path.join(output_path, 'Figure_Session_Consistency_Analysis.png'),
             dpi=300, bbox_inches='tight', facecolor='white')
-plt.savefig(os.path.join(path, 'Figure_Session_Consistency_Analysis.pdf'),
+plt.savefig(os.path.join(output_path, 'Figure_Session_Consistency_Analysis.pdf'),
             dpi=300, bbox_inches='tight')
 
 print(f"\n✓ Figura guardada: Figure_Session_Consistency_Analysis.png/pdf")
@@ -427,7 +428,7 @@ plt.close()
 # GUARDAR RESULTADOS
 # =============================================================================
 
-with pd.ExcelWriter(os.path.join(path, 'Session_Consistency_Analysis.xlsx'),
+with pd.ExcelWriter(os.path.join(output_path, 'Session_Consistency_Analysis.xlsx'),
                     engine='openpyxl') as writer:
     
     results_low.to_excel(writer, sheet_name='Low_ICC_By_Session', index=False)
