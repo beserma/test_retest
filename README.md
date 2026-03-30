@@ -14,7 +14,7 @@ The following data are available in this repository under `/input`:
 
 | File / Folder | Contents | Status |
 |---|---|---|
-| `conn_project01/results/firstlevel/SBC_01/` | Processed fMRI connectivity matrices (CONN toolbox output, per condition) | ✅ Available |
+| `conn_project01/results/firstlevel/SBC_01/` | Processed fMRI connectivity matrices (CONN toolbox output, per condition) | ✅ Available in this zenodo repository: https://zenodo.org/records/19336936
 | `Clinical_results.xlsx` | Per-subject clinical and psychometric scores (test & retest sessions) | ✅ Available |
 | `Raw_Clinical_results.xlsx` | Raw behavioural/questionnaire data | ✅ Available |
 
