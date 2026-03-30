@@ -44,7 +44,8 @@ The following data are available in this repository under `/input`:
 │   │       ├── _list_conditions.txt
 │   │       └── _list_sources.mat
 │   │       └── preprocessing/
-│   └── Clinical_results.xlsx           ← Clinical & questionnaire data
+│   └── Clinical_results.xlsx           ← Clinical & questionnaire curated data
+│   └── Raw_Clinical_results.xlsx       ← Clinical & questionnaire original data 
 │
 ├── output/                             ← Generated tables, figures, results
 │
